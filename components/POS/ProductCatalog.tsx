@@ -44,6 +44,7 @@ export default function ProductCatalog() {
                 // Fallback for stock/price if coming from variants
                 stock: p.variants?.[0]?.current_stock || 0,
                 price: p.variants?.[0]?.price || 0,
+                variant_id: p.variants?.[0]?.id // Important for Checkout
             })) || [];
             setProducts(mappedProducts as any);
         }
@@ -78,8 +79,8 @@ export default function ProductCatalog() {
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${activeCategory === cat
-                                    ? 'bg-emerald-100 text-emerald-700'
-                                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
                                 }`}
                         >
                             {cat}

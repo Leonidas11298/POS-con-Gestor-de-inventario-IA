@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Minus, CreditCard, User, Sparkles, Loader2 } from 'lucide-react';
+import { Trash2, Plus, Minus, CreditCard, User, Sparkles, Loader2, CheckCircle, Download, X } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { supabase } from '../../services/supabaseClient';
 import { sendMessageToN8N, getUpsellSuggestion } from '../../services/geminiService';
+import { getCustomers } from '../../services/customerService';
+import { Customer } from '../../types';
+import { generateReceipt } from '../../services/receiptService';
 
 export default function CartSection() {
     const {
@@ -19,10 +22,23 @@ export default function CartSection() {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [completedOrder, setCompletedOrder] = useState<{ id: number, total: number, change: number, customerName: string } | null>(null);
 
     // AI Upsell State
     const [upsellText, setUpsellText] = useState<string>('');
     const [loadingUpsell, setLoadingUpsell] = useState(false);
+
+    // Customer Data
+    const [availableCustomers, setAvailableCustomers] = useState<Customer[]>([]);
+
+    useEffect(() => {
+        loadCustomers();
+    }, []);
+
+    const loadCustomers = async () => {
+        const data = await getCustomers();
+        setAvailableCustomers(data);
+    };
 
     // Dynamic AI Suggestion Effect
     React.useEffect(() => {
@@ -52,14 +68,19 @@ export default function CartSection() {
         try {
             // 1. Prepare items for RPC
             const p_items = items.map(item => ({
-                variant_id: item.id, // Assuming product.id maps to variant_id for simplicity in this demo, strictly should be variant ID
+                variant_id: (item as any).variant_id, // Use the correct ID mapped in Catalog
                 quantity: item.quantity,
                 price: item.price
             }));
 
+            // 2. Resolve Customer ID
+            // customer in store is currently the name string. Find the object.
+            const selectedCustomerObj = availableCustomers.find(c => c.full_name === customer);
+            const customerId = selectedCustomerObj ? selectedCustomerObj.id : null;
+
             // 2. Call RPC
             const { data: orderId, error } = await supabase.rpc('complete_sale', {
-                p_customer_id: 1, // Hardcoded for Demo, should be use 'customer' state ID
+                p_customer_id: customerId, // Pass null for walk-ins (if DB allows) or handle default
                 p_payment_method: method,
                 p_items: p_items
             });
@@ -69,10 +90,15 @@ export default function CartSection() {
             // 3. Notify n8n
             await sendMessageToN8N(`Nueva venta completada ID #${orderId}. Total: $${total().toFixed(2)}`, []);
 
-            // 4. Clear & Close
-            clearCart();
+            // 4. Show Success State (Don't clear yet, let them print)
+            const customerName = customer || 'Cliente General';
+            setCompletedOrder({
+                id: orderId,
+                total: total(),
+                change: 0, // Placeholder
+                customerName
+            });
             setShowPaymentModal(false);
-            alert(`¡Venta #${orderId} completada con éxito!`);
 
         } catch (err: any) {
             console.error('Checkout error:', err);
@@ -80,6 +106,12 @@ export default function CartSection() {
         } finally {
             setIsProcessing(false);
         }
+    };
+
+    const handleCloseSuccess = () => {
+        setCompletedOrder(null);
+        clearCart();
+        setCustomer(''); // Reset customer too if desired
     };
 
     return (
@@ -93,9 +125,10 @@ export default function CartSection() {
                         value={customer || ''}
                         onChange={(e) => setCustomer(e.target.value)}
                     >
-                        <option value="">Seleccionar Cliente (General)</option>
-                        <option value="Juan Perez">Juan Pérez (VIP)</option>
-                        <option value="Maria Lopez">María López</option>
+                        <option value="">Cliente General (Público)</option>
+                        {availableCustomers.map(c => (
+                            <option key={c.id} value={c.full_name}>{c.full_name}</option>
+                        ))}
                     </select>
                 </div>
             </div>
@@ -221,6 +254,35 @@ export default function CartSection() {
                         >
                             Cancelar
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Success Modal */}
+            {completedOrder && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-8 max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200 text-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle className="h-8 w-8 text-green-600" />
+                        </div>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">¡Venta Exitosa!</h3>
+                        <p className="text-gray-500 mb-6">Orden #{completedOrder.id} registrada.</p>
+
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => generateReceipt(completedOrder.id, new Date().toISOString(), completedOrder.customerName, items, completedOrder.total)}
+                                className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                            >
+                                <Download size={20} />
+                                Imprimir Ticket
+                            </button>
+                            <button
+                                onClick={handleCloseSuccess}
+                                className="w-full py-3 text-gray-500 hover:bg-gray-100 rounded-xl font-medium transition-all"
+                            >
+                                Nueva Venta
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

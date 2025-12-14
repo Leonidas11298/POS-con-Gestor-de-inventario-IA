@@ -61,6 +61,13 @@ export const AIChatDrawer: React.FC<AIChatDrawerProps> = ({ isOpen, onClose }) =
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {
       console.error(err);
+      const errorMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'model',
+        text: "Lo siento, hubo un problema al conectar con el servidor de inteligencia artificial. Por favor verifica tu conexión o las credenciales.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }

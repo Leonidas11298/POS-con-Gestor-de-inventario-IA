@@ -46,6 +46,8 @@ export interface Customer {
   full_name?: string;
   email?: string;
   phone?: string;
+  notes?: string;
+  birth_date?: string; // IPO-8601 Format YYYY-MM-DD
 }
 
 export interface Order {
