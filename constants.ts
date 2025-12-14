@@ -21,22 +21,23 @@ export const MOCK_CATEGORY_DATA: CategoryData[] = [
 ];
 
 export const MOCK_INVENTORY: Product[] = [
-  { id: '1', name: 'Slim Fit Jeans (Black)', category: 'Pants', stock: 12, price: 45.00, salesVelocity: 'High', status: 'Reorder' },
-  { id: '2', name: 'Cotton T-Shirt (White)', category: 'Shirts', stock: 150, price: 20.00, salesVelocity: 'Medium', status: 'Healthy' },
-  { id: '3', name: 'Summer Floral Dress', category: 'Dresses', stock: 5, price: 65.00, salesVelocity: 'High', status: 'Reorder' },
-  { id: '4', name: 'Leather Belt', category: 'Accessories', stock: 8, price: 35.00, salesVelocity: 'Low', status: 'Reorder' },
-  { id: '5', name: 'Office Chinos (Beige)', category: 'Pants', stock: 89, price: 55.00, salesVelocity: 'Medium', status: 'Healthy' },
-  { id: '6', name: 'Wool Sweater', category: 'Shirts', stock: 200, price: 80.00, salesVelocity: 'Low', status: 'Overstock' },
+  { id: 1, name: 'Slim Fit Jeans (Black)', category: 'Pants', stock: 12, price: 45.00, salesVelocity: 'High', status: 'Reorder', sku: 'JEA-SLI-NEG-32' } as any,
+  { id: 2, name: 'Cotton T-Shirt (White)', category: 'Shirts', stock: 150, price: 20.00, salesVelocity: 'Medium', status: 'Healthy', sku: 'TSH-COT-WHI-M' } as any,
+  { id: 3, name: 'Summer Floral Dress', category: 'Dresses', stock: 5, price: 65.00, salesVelocity: 'High', status: 'Reorder', sku: 'VES-FLO-VER-S' } as any,
+  { id: 4, name: 'Leather Belt', category: 'Accessories', stock: 8, price: 35.00, salesVelocity: 'Low', status: 'Reorder', sku: 'ACC-CIN-CUE-M' } as any,
+  { id: 5, name: 'Office Chinos (Beige)', category: 'Pants', stock: 89, price: 55.00, salesVelocity: 'Medium', status: 'Healthy', sku: 'PAN-CHI-BEI-34' } as any,
+  { id: 6, name: 'Wool Sweater', category: 'Shirts', stock: 200, price: 80.00, salesVelocity: 'Low', status: 'Overstock', sku: 'SUE-LAN-GRIS-L' } as any,
 ];
 
 export const SYSTEM_INSTRUCTION = `
-You are the AI Assistant for "Flup", a retail clothing store management dashboard.
-Your goal is to help the store manager make decisions based on sales and inventory data.
-You have access to the following current inventory snapshot (simulated):
-- Slim Fit Jeans: Low stock (12), High velocity. Needs reorder.
-- Summer Floral Dress: Critical stock (5), High velocity. Needs immediate reorder.
-- Leather Belt: Low stock (8).
-- Wool Sweater: Overstock (200), Low velocity. Suggest a discount.
+Eres el Asistente IA de "Flup". Tu objetivo es gestionar el inventario de manera segura y eficiente.
 
-When asked, provide specific advice based on this data. Keep answers concise and business-focused.
+FLUJO DE TRABAJO ESTRICTO PARA REORDENAR:
+1. **IDENTIFICAR**: Cuando el usuario pida un producto (ej: "necesito más blusas"), PRIMERO debes buscarlo usando la herramienta \`lookup_product\`. NO asumas el SKU.
+2. **CONFIRMAR**: Muestra al usuario el nombre, SKU, stock actual y precio del producto encontrado. Pregunta explícitamente: "¿Es este el producto correcto y deseas proceder con la orden?"
+3. **EJECUTAR**: SOLO si el usuario responde "Sí" o confirma, usa la herramienta \`reorder_stock\` con el SKU y cantidad confirmados.
+
+SIEMPRE verifica antes de pedir.
+Tu tono es profesional, servicial y en ESPAÑOL.
+Responde de manera natural, como un asistente humano confirmando datos.
 `;

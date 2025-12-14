@@ -1,19 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, Package, DollarSign, AlertCircle, ShoppingBag } from 'lucide-react';
+import { getTotalStats } from '../services/dashboardService';
 
 export const StatsCards: React.FC = () => {
+  const [stats, setStats] = useState({ revenue: 0, orders: 0, lowStockCount: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const data = await getTotalStats();
+      setStats(data);
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
+
   const cards = [
     {
       title: 'Total Revenue',
-      value: '$3,465',
-      change: '+0.5%',
+      value: loading ? '...' : `$${stats.revenue.toLocaleString()}`,
+      change: '+0.5%', // Calculated change requires historical comparison, keeping static for now or simpler logic
       isPositive: true,
       icon: DollarSign,
       color: 'bg-emerald-100 text-emerald-600',
     },
     {
       title: 'Total Orders',
-      value: '1,136',
+      value: loading ? '...' : stats.orders.toLocaleString(),
       change: '-0.2%',
       isPositive: false,
       icon: ShoppingBag,
@@ -21,7 +34,7 @@ export const StatsCards: React.FC = () => {
     },
     {
       title: 'Gross Margin',
-      value: '$52,187',
+      value: '$52,187', // Needs cost data to calculate real margin
       change: '+2.5%',
       isPositive: true,
       icon: TrendingUp,
@@ -29,10 +42,10 @@ export const StatsCards: React.FC = () => {
     },
     {
       title: 'Stock Alerts',
-      value: '12 Items',
+      value: loading ? '...' : `${stats.lowStockCount} Items`,
       subtext: 'Need reorder',
       isPositive: false,
-      isAlert: true,
+      isAlert: stats.lowStockCount > 0,
       icon: AlertCircle,
       color: 'bg-orange-100 text-orange-600',
     },
@@ -47,17 +60,16 @@ export const StatsCards: React.FC = () => {
               <card.icon size={22} />
             </div>
             {card.change && (
-              <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${
-                card.isPositive ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
-              }`}>
+              <span className={`flex items-center text-xs font-medium px-2 py-1 rounded-full ${card.isPositive ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'
+                }`}>
                 {card.isPositive ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
                 {card.change}
               </span>
             )}
             {card.isAlert && (
-               <span className="text-xs font-medium px-2 py-1 rounded-full text-orange-600 bg-orange-50">
-                  Action Needed
-               </span>
+              <span className="text-xs font-medium px-2 py-1 rounded-full text-orange-600 bg-orange-50">
+                Action Needed
+              </span>
             )}
           </div>
           <div>
