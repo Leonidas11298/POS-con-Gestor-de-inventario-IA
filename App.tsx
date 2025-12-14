@@ -5,15 +5,30 @@ import { SalesChart } from './components/SalesChart';
 import { CategoryChart } from './components/CategoryChart';
 import { InventoryTable } from './components/InventoryTable';
 import { AIChatDrawer } from './components/AIChatDrawer';
-import { Tab } from './types';
+import { Tab, ProductWithVariant } from './types';
 import { Menu, Plus, Calendar } from 'lucide-react';
 
 import POSLayout from './components/POS/POSLayout';
+import InventoryLayout from './components/Inventory/InventoryLayout';
+import ProductModal from './components/Inventory/ProductModal';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAIDrawerOpen, setIsAIDrawerOpen] = useState(false);
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductWithVariant | null>(null);
+  const [inventoryRefreshKey, setInventoryRefreshKey] = useState(0);
+
+  const handleOpenAddProduct = () => {
+    setEditingProduct(null);
+    setIsAddProductModalOpen(true);
+  };
+
+  const handleEditProduct = (product: ProductWithVariant) => {
+    setEditingProduct(product);
+    setIsAddProductModalOpen(true);
+  };
 
   return (
     <div className="flex h-screen bg-[#F9FAFB] overflow-hidden">
@@ -52,7 +67,10 @@ const App: React.FC = () => {
           <div className="flex items-center space-x-3">
             {/* Only show Add Product on Dashboard */}
             {activeTab === Tab.DASHBOARD && (
-              <button className="flex items-center bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all">
+              <button
+                onClick={handleOpenAddProduct}
+                className="flex items-center bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all"
+              >
                 <Plus size={18} className="mr-1.5" />
                 <span className="hidden sm:inline">Add Product</span>
               </button>
@@ -86,11 +104,21 @@ const App: React.FC = () => {
             </div>
           )}
 
+
+
           {activeTab === Tab.POS && (
             <POSLayout />
           )}
 
-          {activeTab !== Tab.DASHBOARD && activeTab !== Tab.POS && (
+          {activeTab === Tab.INVENTORY && (
+            <InventoryLayout
+              onOpenAddProduct={handleOpenAddProduct}
+              onEditProduct={handleEditProduct}
+              refreshTrigger={inventoryRefreshKey}
+            />
+          )}
+
+          {activeTab !== Tab.DASHBOARD && activeTab !== Tab.POS && activeTab !== Tab.INVENTORY && (
             <div className="flex items-center justify-center h-full text-gray-400 flex-col">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Menu size={32} />
@@ -106,6 +134,16 @@ const App: React.FC = () => {
       <AIChatDrawer
         isOpen={isAIDrawerOpen}
         onClose={() => setIsAIDrawerOpen(false)}
+      />
+
+      <ProductModal
+        isOpen={isAddProductModalOpen}
+        onClose={() => setIsAddProductModalOpen(false)}
+        productToEdit={editingProduct}
+        onSuccess={() => {
+          setInventoryRefreshKey(prev => prev + 1);
+          setIsAddProductModalOpen(false);
+        }}
       />
     </div>
   );

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Trash2, Plus, Minus, CreditCard, User, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Trash2, Plus, Minus, CreditCard, User, Sparkles, Loader2 } from 'lucide-react';
 import { useCartStore } from '../../store/cartStore';
 import { supabase } from '../../services/supabaseClient';
-import { sendMessageToN8N } from '../../services/geminiService';
+import { sendMessageToN8N, getUpsellSuggestion } from '../../services/geminiService';
 
 export default function CartSection() {
     const {
@@ -19,6 +19,33 @@ export default function CartSection() {
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+    // AI Upsell State
+    const [upsellText, setUpsellText] = useState<string>('');
+    const [loadingUpsell, setLoadingUpsell] = useState(false);
+
+    // Dynamic AI Suggestion Effect
+    React.useEffect(() => {
+        if (items.length === 0) {
+            setUpsellText('');
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setLoadingUpsell(true);
+            try {
+                const productNames = items.map(i => i.name);
+                const suggestion = await getUpsellSuggestion(productNames);
+                setUpsellText(suggestion);
+            } catch (err) {
+                console.error("Error fetching upsell", err);
+            } finally {
+                setLoadingUpsell(false);
+            }
+        }, 1500); // 1.5s debounce to avoid spamming while adding items
+
+        return () => clearTimeout(timer);
+    }, [items]); // Re-run when cart items change
 
     const handleCheckout = async (method: string) => {
         setIsProcessing(true);
@@ -119,20 +146,26 @@ export default function CartSection() {
                 )}
             </div>
 
-            {/* AI Upsell Zone */}
+            {/* AI Upsell Zone (Dynamic) */}
             {items.length > 0 && (
-                <div className="mx-6 mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 relative overflow-hidden group">
+                <div className="mx-6 mb-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 relative overflow-hidden group min-h-[80px]">
                     <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Sparkles className="h-12 w-12 text-indigo-600" />
                     </div>
-                    <div className="flex gap-3 relative z-10">
-                        <div className="bg-white p-2 rounded-full shadow-sm h-fit">
-                            <Sparkles className="h-5 w-5 text-indigo-600" />
+                    <div className="flex gap-3 relative z-10 items-start">
+                        <div className="bg-white p-2 rounded-full shadow-sm h-fit mt-1">
+                            {loadingUpsell ? (
+                                <Loader2 className="h-5 w-5 text-indigo-600 animate-spin" />
+                            ) : (
+                                <Sparkles className="h-5 w-5 text-indigo-600" />
+                            )}
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <p className="text-indigo-900 font-bold text-sm">Sugerencia IA</p>
-                            <p className="text-indigo-700 text-xs mt-1">
-                                El cliente lleva <strong>Jeans</strong>; ofrécele el <strong>Cinturón de Cuero</strong> (15% desc).
+                            <p className="text-indigo-700 text-xs mt-1 leading-relaxed">
+                                {loadingUpsell
+                                    ? "Analizando canasta..."
+                                    : (upsellText || "¡Gran selección de productos!")}
                             </p>
                         </div>
                     </div>

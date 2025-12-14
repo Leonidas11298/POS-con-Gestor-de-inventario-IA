@@ -36,12 +36,14 @@ export const getInventory = async (): Promise<ProductWithVariant[]> => {
       id,
       sku,
       current_stock,
-      sale_price,
+      price,
       min_stock_threshold,
       products (
+        id,
         name,
         category,
-        image_url
+        image_url,
+        description
       )
     `)
         .limit(50);
@@ -59,9 +61,10 @@ export const getInventory = async (): Promise<ProductWithVariant[]> => {
         category: item.products?.category || 'Uncategorized',
         sku: item.sku,
         stock: item.current_stock,
-        price: item.sale_price,
+        price: item.price,
         status: item.current_stock <= 0 ? 'Overstock' : (item.current_stock <= item.min_stock_threshold ? 'Reorder' : 'Healthy'), // Simple logic, can be improved
-        image_url: item.products?.image_url
+        image_url: item.products?.image_url,
+        description: item.products?.description
     }));
 };
 

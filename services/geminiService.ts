@@ -46,3 +46,19 @@ export const sendMessageToN8N = async (
     return "Lo siento, hubo un error al procesar tu solicitud con el agente principal.";
   }
 };
+
+export const getUpsellSuggestion = async (products: string[]): Promise<string> => {
+  if (products.length === 0) return "";
+
+  const message = `El cliente tiene estos productos en el carrito: ${products.join(', ')}. 
+    Actúa como un vendedor experto y sugiere UN solo producto complementario o accesorio corto que combine bien. 
+    Responde solo con la sugerencia y el motivo breve (máximo 15 palabras). Ej: "Cinturón de cuero, combina con los jeans."`;
+
+  // Re-use the existing connection but with empty history context as this is a one-off prompt
+  return sendMessageToN8N(message, []);
+};
+
+export const generateProductDescription = async (name: string, category: string): Promise<string> => {
+  const message = `Genera una descripción comercial, atractiva y breve (máximo 20 palabras) para un producto llamado "${name}" de la categoría "${category}".`;
+  return sendMessageToN8N(message, []);
+};

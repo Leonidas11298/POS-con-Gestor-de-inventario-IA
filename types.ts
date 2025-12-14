@@ -23,7 +23,7 @@ export interface Variant {
   size?: string;
   color?: string;
   cost_price: number;
-  sale_price: number;
+  price: number;
   current_stock: number;
   min_stock_threshold: number;
   updated_at?: string;
